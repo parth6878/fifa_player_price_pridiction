@@ -22,10 +22,10 @@ from model_evaluation import (
 # 1. File paths
 # -----------------------------
 
-DATA_PATH = Path("../data/fifa21 raw data v2.csv")
-MODEL_PATH = Path("../artifacts/models/fifa_model.pkl")
-PLOT_PATH = Path("../artifacts/plots/predictions_vs_actual.png")
-
+BASE_DIR = Path(__file__).resolve().parent.parent   # the repo root, regardless of cwd
+DATA_PATH = BASE_DIR / "data" / "fifa21 raw data v2.csv"
+MODEL_PATH = BASE_DIR / "artifacts" / "models" / "fifa_model.pkl"
+PLOT_PATH = BASE_DIR / "artifacts" / "plots" / "predictions_vs_actual.png"
 
 # Create folders if they don't exist
 MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)

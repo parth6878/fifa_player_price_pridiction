@@ -7,8 +7,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
-# path = Path("models/fifa_model.pkl")
-# path.parent.mkdir(parents=True, exist_ok=True)
+
 
 RANDOM_STATE = 42
 
