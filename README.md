@@ -106,25 +106,82 @@ underlying data.
 
 ## Requirements
 
-```
-pandas
-numpy
-scikit-learn
-seaborn
-matplotlib
-joblib
+Install the project dependencies:
+
+```bash
+pip install -r requirements.txt
 ```
 
-## Usage
+---
 
-```python
-import joblib
-import pandas as pd
+## Web Application
 
-model = joblib.load("model.joblib")
-encoder = joblib.load("club_encoder.joblib")
-columns = joblib.load("training_columns.joblib")
+An interactive web application powered by Flask and an EA Sports FUT-inspired UI is available under `app/`.
 
-# new_data must go through the same cleaning/encoding steps as in model.ipynb
-# before being passed to model.predict()
+### 1. Running the Web Application Locally
+
+Ensure your environment has the required dependencies installed (e.g. `conda activate testenv`):
+
+```bash
+# From the project root:
+python app/app.py
+```
+
+Open your browser and navigate to:
+```
+http://127.0.0.1:5000
+```
+
+### 2. Web Features
+- **Profile & Potential**: Select Club (autocomplete over 682 clubs), Preferred Foot (`Left`/`Right`), Best Position (`ST`, `RW`, `CB`, `GK`, etc.), OVA, POT, and Age.
+- **Physical & Technical Attributes**: Synchronized sliders and numeric boxes for Height, Weight, Attacking, Skill, Movement, Power, Mentality, Defending, Goalkeeping.
+- **Live FUT Card Preview**: Instant visual feedback on player card ratings and stats.
+- **Quick Presets**: 1-click presets for Wonderkid, Elite Striker, Playmaker, and Top Goalkeeper.
+- **Prediction Display**: Formats predicted valuation as `€X,XXX,XXX` alongside tier insights.
+
+### 3. API Endpoint: `POST /predict`
+
+Accepts raw (unscaled/unencoded) attributes in JSON:
+
+```bash
+curl -X POST http://127.0.0.1:5000/predict \
+  -H "Content-Type: application/json" \
+  -d '{
+    "POT": 95,
+    "OVA": 86,
+    "Age": 18,
+    "Attacking": 450,
+    "Defending": 80,
+    "Power": 75,
+    "Movement": 90,
+    "Goalkeeping": 35,
+    "Mentality": 90,
+    "Skill": 5,
+    "Height": 180,
+    "Weight": 70,
+    "Preferred Foot": "Left",
+    "Best Position": "RW",
+    "Club": "FC Barcelona"
+  }'
+```
+
+**Response (200 OK):**
+```json
+{
+  "predicted_value_eur": 82593744.0
+}
+```
+
+**Validation Error (422 Unprocessable Entity):**
+If an input is outside realistic bounds (e.g., `Age > 45` or `OVA > 99`):
+```json
+{
+  "error": "Age must be between 15 and 45 years."
+}
+```
+
+### 4. Running Automated Tests
+
+```bash
+python tests/test_api.py
 ```
