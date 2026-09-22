@@ -8,20 +8,18 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
     <div class="app-background"></div>
-    <div class="glow-sphere sphere-1"></div>
-    <div class="glow-sphere sphere-2"></div>
 
     <div class="container">
         <!-- Header -->
         <header class="app-header">
             <div class="brand-badge">
-                <span class="pulse-dot"></span>
-                <span>AI VALUATION ENGINE</span>
+                <span class="pulse-dot" id="health-dot"></span>
+                <span id="health-label">Checking valuation model&hellip;</span>
             </div>
             <h1 class="app-title">FIFA Player Price Predictor</h1>
             <p class="app-subtitle">
@@ -30,19 +28,19 @@
 
             <!-- Quick Presets -->
             <div class="presets-container">
-                <span class="presets-label">Quick Presets:</span>
+                <span class="presets-label">Quick presets:</span>
                 <div class="preset-buttons">
                     <button type="button" class="preset-btn" data-preset="wonderkid">
                         <span class="preset-icon">⚡</span> Wonderkid (Pedri)
                     </button>
                     <button type="button" class="preset-btn" data-preset="striker">
-                        <span class="preset-icon">🎯</span> Elite Striker (Haaland)
+                        <span class="preset-icon">🎯</span> Elite striker (Haaland)
                     </button>
                     <button type="button" class="preset-btn" data-preset="playmaker">
                         <span class="preset-icon">🪄</span> Playmaker (De Bruyne)
                     </button>
                     <button type="button" class="preset-btn" data-preset="goalkeeper">
-                        <span class="preset-icon">🧤</span> Top Goalkeeper (Courtois)
+                        <span class="preset-icon">🧤</span> Top goalkeeper (Courtois)
                     </button>
                 </div>
             </div>
@@ -53,8 +51,8 @@
             <!-- Input Form Section -->
             <section class="form-section card-glass">
                 <div class="section-header">
-                    <h2>Player Attributes</h2>
-                    <span class="tag">Raw Metrics</span>
+                    <h2>Player attributes</h2>
+                    <span class="tag">Raw metrics</span>
                 </div>
 
                 <!-- Global Alert Box -->
@@ -66,43 +64,36 @@
                 <form id="prediction-form" novalidate>
                     <!-- Group 1: Identity & Overall Ratings -->
                     <div class="field-group">
-                        <h3 class="group-title">1. Profile & Potential</h3>
+                        <h3 class="group-title">1. Profile & potential</h3>
                         <div class="grid-2">
-                            <!-- Club Autocomplete -->
+                            <!-- Club Dropdown -->
                             <div class="input-wrapper full-width">
                                 <label for="club-input">Club <span class="required">*</span></label>
-                                <input 
-                                    type="text" 
-                                    id="club-input" 
-                                    name="Club" 
-                                    list="club-options" 
-                                    placeholder="Type to search e.g. FC Barcelona" 
-                                    required 
-                                    autocomplete="off"
-                                >
-                                <datalist id="club-options"></datalist>
-                                <span class="input-hint">Must match official FIFA spelling</span>
+                                <select id="club-input" name="Club" required>
+                                    <option value="" disabled selected>Loading clubs&hellip;</option>
+                                </select>
+                                <span class="input-hint">Pulled live from the trained model's known clubs</span>
                             </div>
 
                             <!-- Best Position -->
                             <div class="input-wrapper">
-                                <label for="position-select">Best Position <span class="required">*</span></label>
+                                <label for="position-select">Best position <span class="required">*</span></label>
                                 <div class="select-container">
                                     <select id="position-select" name="Best Position" required>
                                         <option value="ST">ST - Striker</option>
-                                        <option value="RW" selected>RW - Right Winger</option>
-                                        <option value="LW">LW - Left Winger</option>
-                                        <option value="CF">CF - Center Forward</option>
-                                        <option value="CAM">CAM - Attacking Midfield</option>
-                                        <option value="CM">CM - Central Midfield</option>
-                                        <option value="CDM">CDM - Defensive Midfield</option>
-                                        <option value="LM">LM - Left Midfield</option>
-                                        <option value="RM">RM - Right Midfield</option>
-                                        <option value="CB">CB - Center Back</option>
-                                        <option value="LB">LB - Left Back</option>
-                                        <option value="RB">RB - Right Back</option>
-                                        <option value="LWB">LWB - Left Wing Back</option>
-                                        <option value="RWB">RWB - Right Wing Back</option>
+                                        <option value="RW" selected>RW - Right winger</option>
+                                        <option value="LW">LW - Left winger</option>
+                                        <option value="CF">CF - Center forward</option>
+                                        <option value="CAM">CAM - Attacking midfield</option>
+                                        <option value="CM">CM - Central midfield</option>
+                                        <option value="CDM">CDM - Defensive midfield</option>
+                                        <option value="LM">LM - Left midfield</option>
+                                        <option value="RM">RM - Right midfield</option>
+                                        <option value="CB">CB - Center back</option>
+                                        <option value="LB">LB - Left back</option>
+                                        <option value="RB">RB - Right back</option>
+                                        <option value="LWB">LWB - Left wing back</option>
+                                        <option value="RWB">RWB - Right wing back</option>
                                         <option value="GK">GK - Goalkeeper</option>
                                     </select>
                                 </div>
@@ -110,7 +101,7 @@
 
                             <!-- Preferred Foot -->
                             <div class="input-wrapper">
-                                <label for="foot-select">Preferred Foot <span class="required">*</span></label>
+                                <label for="foot-select">Preferred foot <span class="required">*</span></label>
                                 <div class="select-container">
                                     <select id="foot-select" name="Preferred Foot" required>
                                         <option value="Left" selected>Left</option>
@@ -156,7 +147,7 @@
 
                     <!-- Group 2: Physical Metrics -->
                     <div class="field-group">
-                        <h3 class="group-title">2. Physical Attributes</h3>
+                        <h3 class="group-title">2. Physical attributes</h3>
                         <div class="grid-2">
                             <!-- Height -->
                             <div class="stat-control">
@@ -182,7 +173,7 @@
 
                     <!-- Group 3: Technical Composite Stats -->
                     <div class="field-group">
-                        <h3 class="group-title">3. Performance Skill Categories (0 - 500)</h3>
+                        <h3 class="group-title">3. Performance skill categories (0 - 500)</h3>
                         <div class="stat-controls-grid">
                             <!-- Attacking -->
                             <div class="stat-control">
@@ -258,7 +249,7 @@
 
                     <!-- Submit Button -->
                     <button type="submit" id="submit-btn" class="btn-predict">
-                        <span class="btn-text">Calculate Market Valuation</span>
+                        <span class="btn-text">Calculate market valuation</span>
                         <span class="btn-spinner hidden"></span>
                     </button>
                 </form>
@@ -320,8 +311,8 @@
                 <!-- Valuation Result Card -->
                 <div class="valuation-card card-glass">
                     <div class="valuation-header">
-                        <span class="valuation-badge">PREDICTED TRANSFER VALUATION</span>
-                        <div class="model-tag">XGBoost Log-Inverted</div>
+                        <span class="valuation-badge">Predicted transfer valuation</span>
+                        <div class="model-tag">XGBoost log-inverted</div>
                     </div>
 
                     <div class="valuation-content">
@@ -331,17 +322,17 @@
 
                     <div id="valuation-details" class="valuation-details hidden">
                         <div class="metric-chip">
-                            <span class="chip-title">Potential Upside</span>
+                            <span class="chip-title">Potential upside</span>
                             <span id="upside-val" class="chip-val">+9 OVR</span>
                         </div>
                         <div class="metric-chip">
-                            <span class="chip-title">Market Tier</span>
+                            <span class="chip-title">Market tier</span>
                             <span id="tier-val" class="chip-val">Superstar</span>
                         </div>
                     </div>
 
                     <div class="valuation-footer">
-                        <span class="footer-note">⚡ Evaluated instantly via XGBoost regression with Target & One-Hot Encoding</span>
+                        <span class="footer-note">Evaluated instantly via XGBoost regression with target and one-hot encoding.</span>
                     </div>
                 </div>
             </section>

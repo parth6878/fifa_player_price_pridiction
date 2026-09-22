@@ -17,6 +17,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const upsideVal = document.getElementById("upside-val");
     const tierVal = document.getElementById("tier-val");
 
+    // Health Indicator
+    const healthDot = document.getElementById("health-dot");
+    const healthLabel = document.getElementById("health-label");
+
     // Live FUT Card Elements
     const cardOva = document.getElementById("card-ova");
     const cardPos = document.getElementById("card-pos");
@@ -33,6 +37,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const clubInput = document.getElementById("club-input");
     const posSelect = document.getElementById("position-select");
     const footSelect = document.getElementById("foot-select");
+
+    // Tier colors, tied to the warm/light palette (kept in sync with style.css tokens)
+    const TIER_COLORS = {
+        superstar: "#8A5A16",   // --gold-deep
+        topFlight: "#2E6B4E",   // --pitch
+        regular: "#B3562B",     // warm bronze
+        prospect: "#AC9C80"     // --ink-faint
+    };
 
     // Stat mapping for sync: [inputId, sliderId, cardElem]
     const numericFields = [
@@ -82,8 +94,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // -------------------------------------------------------------
     // 2. Sync Profile Meta (Club, Pos, Foot) to Card Preview
     // -------------------------------------------------------------
-    clubInput.addEventListener("input", (e) => {
-        cardClub.textContent = e.target.value.trim() || "Free Agent";
+    clubInput.addEventListener("change", (e) => {
+        cardClub.textContent = e.target.value || "Free Agent";
     });
 
     posSelect.addEventListener("change", (e) => {
@@ -95,29 +107,64 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // -------------------------------------------------------------
-    // 3. Load Autocomplete Clubs from Backend API
+    // 3. Load Clubs from Backend API into the Club Dropdown
     // -------------------------------------------------------------
     async function loadClubs() {
         try {
             const res = await fetch("/api/clubs");
             if (res.ok) {
                 const data = await res.json();
-                const datalist = document.getElementById("club-options");
-                datalist.innerHTML = "";
+                clubInput.innerHTML = "";
                 data.clubs.forEach(club => {
                     const opt = document.createElement("option");
                     opt.value = club;
-                    datalist.appendChild(opt);
+                    opt.textContent = club;
+                    clubInput.appendChild(opt);
                 });
+            } else {
+                throw new Error(`Unexpected status ${res.status}`);
             }
         } catch (err) {
-            console.warn("Could not load clubs autocomplete list:", err);
+            console.warn("Could not load clubs list:", err);
+            clubInput.innerHTML = '<option value="" disabled selected>Could not load clubs — refresh to retry</option>';
         }
     }
-    loadClubs();
+
+    // Ensures a preset's club exists as an option even if it wasn't
+    // among the clubs the backend returned, so applying a preset never
+    // leaves the dropdown empty.
+    function ensureClubOption(clubName) {
+        const exists = Array.from(clubInput.options).some(opt => opt.value === clubName);
+        if (!exists) {
+            const opt = document.createElement("option");
+            opt.value = clubName;
+            opt.textContent = clubName;
+            clubInput.appendChild(opt);
+        }
+    }
 
     // -------------------------------------------------------------
-    // 4. Presets
+    // 4. Live Model/Backend Health Check
+    // -------------------------------------------------------------
+    async function checkHealth() {
+        try {
+            const res = await fetch("/health");
+            const data = await res.json();
+            if (res.ok && data.model_loaded) {
+                healthDot.classList.remove("offline");
+                healthLabel.textContent = "Valuation model is live";
+            } else {
+                healthDot.classList.add("offline");
+                healthLabel.textContent = "Model unavailable — predictions disabled";
+            }
+        } catch (err) {
+            healthDot.classList.add("offline");
+            healthLabel.textContent = "Can't reach the backend";
+        }
+    }
+
+    // -------------------------------------------------------------
+    // 5. Presets
     // -------------------------------------------------------------
     const presets = {
         wonderkid: {
@@ -194,6 +241,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const data = presets[presetKey];
         if (!data) return;
 
+        ensureClubOption(data.Club);
         clubInput.value = data.Club;
         posSelect.value = data["Best Position"];
         footSelect.value = data["Preferred Foot"];
@@ -230,7 +278,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // -------------------------------------------------------------
-    // 5. Form Submission & Prediction
+    // 6. Form Submission & Prediction
     // -------------------------------------------------------------
     function showAlert(msg) {
         alertMessage.textContent = msg;
@@ -255,7 +303,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Gather payload matching exact FEATURE_COLS
         const payload = {
-            "Club": clubInput.value.trim(),
+            "Club": clubInput.value,
             "Best Position": posSelect.value,
             "Preferred Foot": footSelect.value,
             "OVA": parseFloat(document.getElementById("input-ova").value),
@@ -272,16 +320,16 @@ document.addEventListener("DOMContentLoaded", () => {
             "Goalkeeping": parseFloat(document.getElementById("input-goalkeeping").value)
         };
 
-        // Client-side quick check for non-empty club
+        // Client-side quick check for a selected club
         if (!payload.Club) {
-            showAlert("Please specify a club for the player.");
+            showAlert("Please select a club for the player.");
             clubInput.focus();
             return;
         }
 
         // Show Loading State
         submitBtn.disabled = true;
-        btnText.textContent = "Estimating Value...";
+        btnText.textContent = "Estimating value...";
         btnSpinner.classList.remove("hidden");
         priceDisplay.style.opacity = "0.5";
 
@@ -313,19 +361,19 @@ document.addEventListener("DOMContentLoaded", () => {
             // Update details
             const diff = payload.POT - payload.OVA;
             upsideVal.textContent = diff > 0 ? `+${diff} OVR` : `${diff} OVR`;
-            
+
             if (predictedValue >= 70_000_000) {
-                tierVal.textContent = "Superstar Tier";
-                tierVal.style.color = "#ffd700";
+                tierVal.textContent = "Superstar tier";
+                tierVal.style.color = TIER_COLORS.superstar;
             } else if (predictedValue >= 30_000_000) {
-                tierVal.textContent = "Top Flight";
-                tierVal.style.color = "#00e5a3";
+                tierVal.textContent = "Top flight";
+                tierVal.style.color = TIER_COLORS.topFlight;
             } else if (predictedValue >= 10_000_000) {
-                tierVal.textContent = "First Team Regular";
-                tierVal.style.color = "#00d2ff";
+                tierVal.textContent = "First team regular";
+                tierVal.style.color = TIER_COLORS.regular;
             } else {
-                tierVal.textContent = "Squad Player / Prospect";
-                tierVal.style.color = "#94a3b8";
+                tierVal.textContent = "Squad player / prospect";
+                tierVal.style.color = TIER_COLORS.prospect;
             }
             valuationDetails.classList.remove("hidden");
 
@@ -336,12 +384,18 @@ document.addEventListener("DOMContentLoaded", () => {
             valuationDetails.classList.add("hidden");
         } finally {
             submitBtn.disabled = false;
-            btnText.textContent = "Calculate Market Valuation";
+            btnText.textContent = "Calculate market valuation";
             btnSpinner.classList.add("hidden");
             priceDisplay.style.opacity = "1";
         }
     });
 
-    // Initialize with default preset (Wonderkid)
-    applyPreset("wonderkid");
+    // -------------------------------------------------------------
+    // Initialize: load clubs, check health, then apply default preset
+    // -------------------------------------------------------------
+    (async () => {
+        await loadClubs();
+        checkHealth();
+        applyPreset("wonderkid");
+    })();
 });
