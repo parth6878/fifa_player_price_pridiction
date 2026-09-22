@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FIFA Player Market Value Predictor</title>
+    <meta name="description" content="AI-powered FIFA player market value valuation using XGBoost regression pipeline.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="app-background"></div>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="brand-badge">
+                <span class="pulse-dot" id="health-dot"></span>
+                <span id="health-label">Checking valuation model&hellip;</span>
+            </div>
+            <h1 class="app-title">FIFA Player Price Predictor</h1>
+            <p class="app-subtitle">
+                Estimate transfer market values with machine learning trained on comprehensive FIFA player performance metrics.
+            </p>
+
+            <!-- Quick Presets -->
+            <div class="presets-container">
+                <span class="presets-label">Quick presets:</span>
+                <div class="preset-buttons">
+                    <button type="button" class="preset-btn" data-preset="wonderkid">
+                        <span class="preset-icon">⚡</span> Wonderkid (Pedri)
+                    </button>
+                    <button type="button" class="preset-btn" data-preset="striker">
+                        <span class="preset-icon">🎯</span> Elite striker (Haaland)
+                    </button>
+                    <button type="button" class="preset-btn" data-preset="playmaker">
+                        <span class="preset-icon">🪄</span> Playmaker (De Bruyne)
+                    </button>
+                    <button type="button" class="preset-btn" data-preset="goalkeeper">
+                        <span class="preset-icon">🧤</span> Top goalkeeper (Courtois)
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Workspace -->
+        <main class="workspace-grid">
+            <!-- Input Form Section -->
+            <section class="form-section card-glass">
+                <div class="section-header">
+                    <h2>Player attributes</h2>
+                    <span class="tag">Raw metrics</span>
+                </div>
+
+                <!-- Global Alert Box -->
+                <div id="alert-box" class="alert hidden" role="alert">
+                    <span class="alert-icon">⚠️</span>
+                    <span id="alert-message"></span>
+                </div>
+
+                <form id="prediction-form" novalidate>
+                    <!-- Group 1: Identity & Overall Ratings -->
+                    <div class="field-group">
+                        <h3 class="group-title">1. Profile & potential</h3>
+                        <div class="grid-2">
+                            <!-- Club Dropdown -->
+                            <div class="input-wrapper full-width">
+                                <label for="club-input">Club <span class="required">*</span></label>
+                                <select id="club-input" name="Club" required>
+                                    <option value="" disabled selected>Loading clubs&hellip;</option>
+                                </select>
+                                <span class="input-hint">Pulled live from the trained model's known clubs</span>
+                            </div>
+
+                            <!-- Best Position -->
+                            <div class="input-wrapper">
+                                <label for="position-select">Best position <span class="required">*</span></label>
+                                <div class="select-container">
+                                    <select id="position-select" name="Best Position" required>
+                                        <option value="ST">ST - Striker</option>
+                                        <option value="RW" selected>RW - Right winger</option>
+                                        <option value="LW">LW - Left winger</option>
+                                        <option value="CF">CF - Center forward</option>
+                                        <option value="CAM">CAM - Attacking midfield</option>
+                                        <option value="CM">CM - Central midfield</option>
+                                        <option value="CDM">CDM - Defensive midfield</option>
+                                        <option value="LM">LM - Left midfield</option>
+                                        <option value="RM">RM - Right midfield</option>
+                                        <option value="CB">CB - Center back</option>
+                                        <option value="LB">LB - Left back</option>
+                                        <option value="RB">RB - Right back</option>
+                                        <option value="LWB">LWB - Left wing back</option>
+                                        <option value="RWB">RWB - Right wing back</option>
+                                        <option value="GK">GK - Goalkeeper</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Preferred Foot -->
+                            <div class="input-wrapper">
+                                <label for="foot-select">Preferred foot <span class="required">*</span></label>
+                                <div class="select-container">
+                                    <select id="foot-select" name="Preferred Foot" required>
+                                        <option value="Left" selected>Left</option>
+                                        <option value="Right">Right</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Core Ratings: OVA, POT, Age -->
+                        <div class="stat-controls-grid">
+                            <!-- Overall Rating (OVA) -->
+                            <div class="stat-control">
+                                <div class="stat-meta">
+                                    <label for="input-ova">OVA (Overall)</label>
+                                    <input type="number" id="input-ova" name="OVA" min="40" max="99" value="86" class="stat-num-box">
+                                </div>
+                                <input type="range" id="slider-ova" min="40" max="99" value="86" class="stat-slider">
+                                <div class="slider-bounds"><span>40</span><span>99</span></div>
+                            </div>
+
+                            <!-- Potential Rating (POT) -->
+                            <div class="stat-control">
+                                <div class="stat-meta">
+                                    <label for="input-pot">POT (Potential)</label>
+                                    <input type="number" id="input-pot" name="POT" min="40" max="99" value="95" class="stat-num-box">
+                                </div>
+                                <input type="range" id="slider-pot" min="40" max="99" value="95" class="stat-slider">
+                                <div class="slider-bounds"><span>40</span><span>99</span></div>
+                            </div>
+
+                            <!-- Age -->
+                            <div class="stat-control">
+                                <div class="stat-meta">
+                                    <label for="input-age">Age</label>
+                                    <input type="number" id="input-age" name="Age" min="15" max="45" value="18" class="stat-num-box">
+                                </div>
+                                <input type="range" id="slider-age" min="15" max="45" value="18" class="stat-slider">
+                                <div class="slider-bounds"><span>15</span><span>45</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Group 2: Physical Metrics -->
+                    <div class="field-group">
+                        <h3 class="group-title">2. Physical attributes</h3>
+                        <div class="grid-2">
+                            <!-- Height -->
+                            <div class="stat-control">
+                                <div class="stat-meta">
+                                    <label for="input-height">Height (cm)</label>
+                                    <input type="number" id="input-height" name="Height" min="120" max="220" value="180" class="stat-num-box">
+                                </div>
+                                <input type="range" id="slider-height" min="120" max="220" value="180" class="stat-slider">
+                                <div class="slider-bounds"><span>120 cm</span><span>220 cm</span></div>
+                            </div>
+
+                            <!-- Weight -->
+                            <div class="stat-control">
+                                <div class="stat-meta">
+                                    <label for="input-weight">Weight (kg)</label>
+                                    <input type="number" id="input-weight" name="Weight" min="40" max="130" value="70" class="stat-num-box">
+                                </div>
+                                <input type="range" id="slider-weight" min="40" max="130" value="70" class="stat-slider">
+                                <div class="slider-bounds"><span>40 kg</span><span>130 kg</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Group 3: Technical Composite Stats -->
+                    <div class="field-group">
+                        <h3 class="group-title">3. Performance skill categories (0 - 500)</h3>
+                        <div class="stat-controls-grid">
+                            <!-- Attacking -->
+                            <div class="stat-control">
+                                <div class="stat-meta">
+                                    <label for="input-attacking">Attacking</label>
+                                    <input type="number" id="input-attacking" name="Attacking" min="0" max="500" value="450" class="stat-num-box">
+                                </div>
+                                <input type="range" id="slider-attacking" min="0" max="500" value="450" class="stat-slider">
+                                <div class="slider-bounds"><span>0</span><span>500</span></div>
+                            </div>
+
+                            <!-- Skill -->
+                            <div class="stat-control">
+                                <div class="stat-meta">
+                                    <label for="input-skill">Skill</label>
+                                    <input type="number" id="input-skill" name="Skill" min="0" max="500" value="430" class="stat-num-box">
+                                </div>
+                                <input type="range" id="slider-skill" min="0" max="500" value="430" class="stat-slider">
+                                <div class="slider-bounds"><span>0</span><span>500</span></div>
+                            </div>
+
+                            <!-- Movement -->
+                            <div class="stat-control">
+                                <div class="stat-meta">
+                                    <label for="input-movement">Movement</label>
+                                    <input type="number" id="input-movement" name="Movement" min="0" max="500" value="440" class="stat-num-box">
+                                </div>
+                                <input type="range" id="slider-movement" min="0" max="500" value="440" class="stat-slider">
+                                <div class="slider-bounds"><span>0</span><span>500</span></div>
+                            </div>
+
+                            <!-- Power -->
+                            <div class="stat-control">
+                                <div class="stat-meta">
+                                    <label for="input-power">Power</label>
+                                    <input type="number" id="input-power" name="Power" min="0" max="500" value="380" class="stat-num-box">
+                                </div>
+                                <input type="range" id="slider-power" min="0" max="500" value="380" class="stat-slider">
+                                <div class="slider-bounds"><span>0</span><span>500</span></div>
+                            </div>
+
+                            <!-- Mentality -->
+                            <div class="stat-control">
+                                <div class="stat-meta">
+                                    <label for="input-mentality">Mentality</label>
+                                    <input type="number" id="input-mentality" name="Mentality" min="0" max="500" value="390" class="stat-num-box">
+                                </div>
+                                <input type="range" id="slider-mentality" min="0" max="500" value="390" class="stat-slider">
+                                <div class="slider-bounds"><span>0</span><span>500</span></div>
+                            </div>
+
+                            <!-- Defending -->
+                            <div class="stat-control">
+                                <div class="stat-meta">
+                                    <label for="input-defending">Defending</label>
+                                    <input type="number" id="input-defending" name="Defending" min="0" max="500" value="120" class="stat-num-box">
+                                </div>
+                                <input type="range" id="slider-defending" min="0" max="500" value="120" class="stat-slider">
+                                <div class="slider-bounds"><span>0</span><span>500</span></div>
+                            </div>
+
+                            <!-- Goalkeeping -->
+                            <div class="stat-control">
+                                <div class="stat-meta">
+                                    <label for="input-goalkeeping">Goalkeeping</label>
+                                    <input type="number" id="input-goalkeeping" name="Goalkeeping" min="0" max="500" value="55" class="stat-num-box">
+                                </div>
+                                <input type="range" id="slider-goalkeeping" min="0" max="500" value="55" class="stat-slider">
+                                <div class="slider-bounds"><span>0</span><span>500</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" id="submit-btn" class="btn-predict">
+                        <span class="btn-text">Calculate market valuation</span>
+                        <span class="btn-spinner hidden"></span>
+                    </button>
+                </form>
+            </section>
+
+            <!-- Preview & Valuation Result Section -->
+            <section class="result-section">
+                <!-- Live FUT Player Card -->
+                <div class="fut-card-wrapper">
+                    <div class="fut-card gold-rare">
+                        <div class="card-inner">
+                            <div class="card-top">
+                                <div class="card-rating" id="card-ova">86</div>
+                                <div class="card-pos" id="card-pos">RW</div>
+                                <div class="card-foot-badge" id="card-foot">L</div>
+                            </div>
+                            <div class="card-avatar">
+                                <div class="avatar-silhouette">
+                                    <svg viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="card-player-info">
+                                <div class="card-name" id="card-name">TARGET PLAYER</div>
+                                <div class="card-club" id="card-club">FC Barcelona</div>
+                                <div class="card-divider"></div>
+                                <div class="card-stats-grid">
+                                    <div class="card-stat">
+                                        <span class="c-val" id="c-att">450</span>
+                                        <span class="c-lbl">ATT</span>
+                                    </div>
+                                    <div class="card-stat">
+                                        <span class="c-val" id="c-skl">430</span>
+                                        <span class="c-lbl">SKI</span>
+                                    </div>
+                                    <div class="card-stat">
+                                        <span class="c-val" id="c-mov">440</span>
+                                        <span class="c-lbl">MOV</span>
+                                    </div>
+                                    <div class="card-stat">
+                                        <span class="c-val" id="c-pow">380</span>
+                                        <span class="c-lbl">POW</span>
+                                    </div>
+                                    <div class="card-stat">
+                                        <span class="c-val" id="c-def">120</span>
+                                        <span class="c-lbl">DEF</span>
+                                    </div>
+                                    <div class="card-stat">
+                                        <span class="c-val" id="c-pot">95</span>
+                                        <span class="c-lbl">POT</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Valuation Result Card -->
+                <div class="valuation-card card-glass">
+                    <div class="valuation-header">
+                        <span class="valuation-badge">Predicted transfer valuation</span>
+                        <div class="model-tag">XGBoost log-inverted</div>
+                    </div>
+
+                    <div class="valuation-content">
+                        <div class="currency-symbol">€</div>
+                        <div id="price-display" class="price-value">--</div>
+                    </div>
+
+                    <div id="valuation-details" class="valuation-details hidden">
+                        <div class="metric-chip">
+                            <span class="chip-title">Potential upside</span>
+                            <span id="upside-val" class="chip-val">+9 OVR</span>
+                        </div>
+                        <div class="metric-chip">
+                            <span class="chip-title">Market tier</span>
+                            <span id="tier-val" class="chip-val">Superstar</span>
+                        </div>
+                    </div>
+
+                    <div class="valuation-footer">
+                        <span class="footer-note">Evaluated instantly via XGBoost regression with target and one-hot encoding.</span>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
